@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# テスト実行時の失敗スクリーンショット / 一時ファイル
+tests/artifacts/
+tests/*.png
+
+# エディタ / OS
+.DS_Store
+Thumbs.db
+*.log

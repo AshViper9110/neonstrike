@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#04020c" />
+  <meta name="description" content="NEON//STRIKE — PeerJSで遊ぶネオン調3D FPS。4文字ルームコード、5種類の武器、動くステージギミック。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2304020c'/%3E%3Cpath d='M3 12 8 3l5 9z' fill='%2300f6ff'/%3E%3C/svg%3E" />
+  <title>NEON//STRIKE — PeerJS Neon FPS</title>
+</head>
+<body>
+  <!-- Shown only when this file is opened directly via file:// (CSS/JS are blocked there). -->
+  <div id="boot-notice" style="display:none;position:fixed;inset:0;z-index:99999;place-items:center;padding:24px;background:radial-gradient(circle at 50% 20%, #101a36 0%, #04020c 62%);color:#e7f7ff;font-family:'Segoe UI','Yu Gothic UI',sans-serif;text-align:center;">
+    <div style="max-width:560px;width:100%;padding:34px 30px 30px;border:1px solid rgba(0,246,255,0.38);background:linear-gradient(160deg,rgba(10,17,34,0.98),rgba(3,6,16,0.99));box-shadow:0 0 70px rgba(0,246,255,0.14),0 30px 90px rgba(0,0,0,0.7);">
+      <p style="margin:0 0 12px;font-size:10px;letter-spacing:0.24em;color:#00f6ff;">NEON//STRIKE — BOOT CHECK</p>
+      <h1 style="margin:0 0 16px;font-size:21px;line-height:1.45;letter-spacing:0.02em;">ローカルサーバーから起動してください</h1>
+      <p style="margin:0 0 18px;font-size:12px;line-height:1.9;color:#8ba3bd;">index.html を直接開くと、ブラウザのセキュリティ制限（file://）により <b style="color:#e7f7ff;">CSS と JavaScript が読み込まれません</b>。そのため画面が崩れたり、操作できなくなります。</p>
+      <div style="margin:0 0 20px;padding:14px 16px;border-left:2px solid #00f6ff;background:rgba(0,246,255,0.05);text-align:left;font-size:12px;line-height:1.9;color:#c7d9e8;">
+        1. フォルダ内の <code style="padding:2px 6px;background:rgba(255,255,255,0.08);color:#a6ff4d;">start-game.bat</code> をダブルクリック<br />
+        2. ブラウザが自動で開きます（<code style="color:#00f6ff;">http://localhost:5173</code>）
+      </div>
+      <p style="margin:0 0 6px;font-size:10px;color:#52657c;">手動で起動する場合</p>
+      <p style="margin:0;font-size:12px;line-height:1.9;color:#8ba3bd;"><code style="color:#e7f7ff;">npm.cmd install</code> → <code style="color:#e7f7ff;">npm.cmd run dev</code></p>
+    </div>
+  </div>
+  <script>
+    if (location.protocol === 'file:') {
+      document.getElementById('boot-notice').style.display = 'grid';
+    }
+  </script>
+
+  <div id="app">
+    <!-- ======================= MAIN MENU ======================= -->
+    <section id="menu-screen" class="screen">
+      <div class="menu-bg" aria-hidden="true">
+        <div class="menu-grid"></div>
+        <div class="orb orb-a"></div>
+        <div class="orb orb-b"></div>
+        <div class="orb orb-c"></div>
+        <div class="menu-horizon"></div>
+        <div class="menu-noise"></div>
+      </div>
+
+      <header class="menu-top">
+        <div class="brandmark">
+          <span class="brandmark-glyph">◈</span>
+          <span>NEONSTRIKE<span class="dim"> / P2P ARENA</span></span>
+        </div>
+        <div class="menu-top-meta">
+          <span><i class="live-dot"></i> PEER.JS NETWORK</span>
+          <span class="top-sep">//</span>
+          <span>BUILD 1.0.0</span>
+        </div>
+      </header>
+
+      <main class="menu-main">
+        <div class="hero-col">
+          <p class="eyebrow"><span></span> NEON COMBAT PROTOCOL <span></span></p>
+          <h1 class="game-title" data-text="NEON//STRIKE">NEON<span class="title-slash">//</span>STRIKE</h1>
+          <p class="hero-jp">ネオン都市の頂点を奪え。</p>
+          <p class="hero-copy">
+            最大4文字のルームコードで友達と接続。5種類の武器、動く足場、位相ゲート、
+            ジャンプパッド、テレポーターが戦場を変える。Peer.jsによるP2P対戦FPS。
+          </p>
+          <div class="feature-chips">
+            <span class="chip chip-cyan">P2P / 4-CHAR ROOM</span>
+            <span class="chip chip-magenta">5 WEAPONS</span>
+            <span class="chip chip-lime">STAGE GIMMICKS</span>
+            <span class="chip chip-violet">MODULAR ARENA</span>
+          </div>
+
+          <div class="weapon-preview" aria-hidden="true">
+            <div class="weapon-preview-head"><span>ARSENAL</span><span>01—05</span></div>
+            <ol id="menu-weapon-list"></ol>
+          </div>
+        </div>
+
+        <section class="connect-panel glass">
+          <div class="panel-screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="connect-head">
+            <div>
+              <span class="micro-label">CONNECTION TERMINAL</span>
+              <h2>ルームに接続</h2>
+            </div>
+            <span class="id-badge">P2P</span>
+          </div>
+
+          <form id="connect-form" autocomplete="off" novalidate>
+            <label class="field">
+              <span class="field-label">コールサイン <em>NAME</em></span>
+              <input id="input-name" name="name" type="text" maxlength="12" placeholder="PLAYER" spellcheck="false" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">ルームコード <em>4文字まで</em><b id="room-count">0/4</b></span>
+              <input id="input-room" name="room" type="text" maxlength="4" placeholder="ABCD"
+                     spellcheck="false" autocapitalize="characters" autocomplete="off" />
+              <span class="field-hint">英数字 1〜4 文字 / 大文字小文字は区別しません</span>
+            </label>
+
+            <div class="connect-actions">
+              <button type="button" id="btn-host" class="btn btn-primary">
+                <span class="btn-kicker">CREATE</span>
+                <span>ルームを作成</span>
+              </button>
+              <button type="button" id="btn-join" class="btn btn-outline">
+                <span class="btn-kicker">JOIN</span>
+                <span>ルームに参加</span>
+              </button>
+            </div>
+
+            <button type="button" id="btn-practice" class="btn btn-ghost btn-practice">
+              <span class="practice-icon">▶</span>
+              <span>
+                <strong>練習モード</strong>
+                <small>BOTSとオフライン演習</small>
+              </span>
+              <span class="practice-arrow">→</span>
+            </button>
+          </form>
+
+          <div id="menu-status" class="menu-status" role="status">
+            <i></i><span>ネットワーク待機中</span>
+          </div>
+
+          <details class="advanced">
+            <summary>詳細ネットワーク設定 <span>ADVANCED</span></summary>
+            <div class="advanced-body">
+              <p class="advanced-hint">
+                既定では PeerJS クラウドを使用します。ローカルの PeerServer を使う場合は
+                下記を入力してください（<code>npm run signal</code> で起動）。
+              </p>
+              <div class="advanced-grid">
+                <label class="field field-sm"><span>HOST</span><input id="peer-host" placeholder="0.peerjs.com" spellcheck="false" /></label>
+                <label class="field field-sm"><span>PORT</span><input id="peer-port" type="number" min="1" max="65535" placeholder="443" /></label>
+                <label class="field field-sm"><span>PATH</span><input id="peer-path" placeholder="/" spellcheck="false" /></label>
+                <label class="field field-sm"><span>KEY</span><input id="peer-key" placeholder="peerjs" spellcheck="false" /></label>
+              </div>
+              <div class="advanced-row">
+                <label class="check"><input id="peer-secure" type="checkbox" /> <span>SSL (wss/https)</span></label>
+                <button type="button" id="btn-local-preset" class="mini-btn">LOCAL PRESET</button>
+                <button type="button" id="btn-cloud-preset" class="mini-btn">CLOUD</button>
+              </div>
+              <div class="advanced-row advanced-save">
+                <label class="check"><input id="peer-remember" type="checkbox" /> <span>この端末に保存</span></label>
+              </div>
+            </div>
+          </details>
+
+          <div class="panel-footer">
+            <button type="button" class="text-btn" id="btn-settings">
+              <span class="key">⚙</span> 設定
+            </button>
+            <button type="button" class="text-btn" id="btn-help">
+              <span class="key">?</span> 操作説明
+            </button>
+            <span class="panel-footer-note">クレジット不要 / P2P</span>
+          </div>
+        </section>
+
+        <aside class="intel-col">
+          <div class="intel-block">
+            <span class="micro-label">CONTROLS</span>
+            <h3>操作</h3>
+            <dl class="keylist">
+              <div><dt>WASD</dt><dd>移動</dd></div>
+              <div><dt>MOUSE</dt><dd>照準</dd></div>
+              <div><dt>LMB</dt><dd>射撃</dd></div>
+              <div><dt>RMB</dt><dd>ズーム</dd></div>
+              <div><dt>SPACE</dt><dd>ジャンプ</dd></div>
+              <div><dt>SHIFT</dt><dd>スプリント</dd></div>
+              <div><dt>CTRL</dt><dd>しゃがみ</dd></div>
+              <div><dt>R</dt><dd>リロード</dd></div>
+              <div><dt>1—5 / WHEEL</dt><dd>武器切替</dd></div>
+              <div><dt>TAB</dt><dd>スコア</dd></div>
+              <div><dt>ESC</dt><dd>メニュー</dd></div>
+            </dl>
+          </div>
+          <div class="intel-block intel-gimmick">
+            <span class="micro-label">FIELD INTEL</span>
+            <h3>ギミック</h3>
+            <ul>
+              <li><b class="c-cyan">JUMP PAD</b> 高く打ち上げる</li>
+              <li><b class="c-magenta">TELEPORT</b> 離れた場所へ転移</li>
+              <li><b class="c-lime">MOVING PLATFORM</b> 乗って移動</li>
+              <li><b class="c-violet">PHASE GATE</b> 通過できる物が違う</li>
+              <li><b class="c-amber">LASER FENCE</b> 点滅する危険地帯</li>
+              <li><b class="c-cyan">LOW-G ZONE</b> 浮遊フィールド</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="menu-foot">
+        <span>© 2026 NEONSTRIKE LABS</span>
+        <span class="foot-center">NO SERVERS STORED YOUR DATA / P2P ENCRYPTED</span>
+        <span>THREE.JS + PEER.JS</span>
+      </footer>
+    </section>
+
+    <!-- ======================= GAME ======================= -->
+    <section id="game-screen" class="screen hidden">
+      <canvas id="game-canvas"></canvas>
+      <div class="game-vignette" aria-hidden="true"></div>
+      <div class="game-scanlines" aria-hidden="true"></div>
+
+      <div id="hud" class="hud">
+        <header class="hud-top">
+          <div class="hud-map-name">
+            <span class="micro-label">ARENA // 01</span>
+            <strong>NEON FOUNDRY</strong>
+          </div>
+          <div class="hud-match">
+            <span id="hud-mode">PRACTICE</span>
+            <b id="hud-timer">00:00</b>
+          </div>
+          <div class="hud-room">
+            <div class="room-pill">
+              <span>ROOM</span>
+              <b id="hud-room-code">----</b>
+            </div>
+            <div class="net-pill" id="hud-net"><i></i><span>LOCAL</span></div>
+          </div>
+        </header>
+
+        <div class="minimap-shell" id="minimap-shell">
+          <canvas id="minimap" width="360" height="360"></canvas>
+          <span class="minimap-n">N</span>
+          <span class="minimap-label">TAC-MAP</span>
+        </div>
+
+        <div id="killfeed" class="killfeed"></div>
+
+        <div id="crosshair" class="crosshair">
+          <i class="ch ch-t"></i><i class="ch ch-b"></i><i class="ch ch-l"></i><i class="ch ch-r"></i>
+          <span class="ch-dot"></span>
+        </div>
+        <div id="hitmarker" class="hitmarker"><i></i><i></i><i></i><i></i></div>
+        <div id="damage-vignette" class="damage-vignette"></div>
+        <div id="damage-direction" class="damage-direction"></div>
+
+        <div class="hud-bottom-left">
+          <div class="hud-health">
+            <div class="hud-bar-head">
+              <span class="micro-label">INTEGRITY</span>
+              <span class="health-number"><b id="health-value">100</b><small>HP</small></span>
+            </div>
+            <div class="health-track"><div id="health-fill" class="health-fill"></div><div class="health-ticks"></div></div>
+            <div class="hud-status-row">
+              <span id="hud-kills">K 0</span>
+              <span id="hud-deaths">D 0</span>
+              <span id="hud-ping">-- ms</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-weapon">
+          <div class="weapon-meta">
+            <span id="weapon-class" class="micro-label">PULSE / SEMI</span>
+            <strong id="weapon-name">PULSE-9</strong>
+          </div>
+          <div class="ammo-row">
+            <div class="ammo-main" id="ammo-main"><b id="ammo-mag">12</b><span id="ammo-reserve">/ ∞</span></div>
+            <div class="reload-ring" id="reload-ring">
+              <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="ring-bg" cx="22" cy="22" r="18"></circle><circle id="reload-progress" class="ring-fg" cx="22" cy="22" r="18"></circle></svg>
+              <span>R</span>
+            </div>
+          </div>
+          <div id="ammo-pips" class="ammo-pips"></div>
+        </div>
+
+        <div id="weapon-bar" class="weapon-bar"></div>
+
+        <div id="toast-stack" class="toast-stack"></div>
+        <div id="hint-line" class="hint-line"></div>
+        <div id="waiting-note" class="waiting-note hidden">
+          <i></i><span>ルーム <b id="wait-code">----</b> でプレイヤーを待機中</span>
+        </div>
+        <div id="perf" class="perf hidden">-- FPS</div>
+      </div>
+
+      <div id="scoreboard" class="scoreboard hidden">
+        <div class="score-head">
+          <div><span class="micro-label">LIVE TELEMETRY</span><h2>SCOREBOARD</h2></div>
+          <span class="score-room" id="score-room">ROOM ----</span>
+        </div>
+        <div class="score-table">
+          <div class="score-row score-row--head">
+            <span>RANK</span><span>PLAYER</span><span>KILLS</span><span>DEATHS</span><span>STATUS</span><span>PING</span>
+          </div>
+          <div id="score-rows"></div>
+        </div>
+        <p class="score-hint">TAB を離すと閉じる</p>
+      </div>
+
+      <div id="start-overlay" class="start-overlay">
+        <div class="start-card">
+          <span class="micro-label">DEPLOYMENT READY</span>
+          <h2 id="start-title">NEON FOUNDRY</h2>
+          <p id="start-sub">クリックして戦闘を開始</p>
+          <div class="start-room">ROOM CODE <b id="start-room-code">----</b></div>
+          <div class="start-controls">
+            <span><b>WASD</b> 移動</span><span><b>LMB</b> 射撃</span><span><b>R</b> リロード</span><span><b>1-5</b> 武器</span>
+          </div>
+          <button id="btn-deploy" class="btn btn-primary btn-deploy">
+            <span class="btn-kicker">CLICK TO</span>
+            <span>DEPLOY</span>
+          </button>
+          <button id="btn-leave-start" class="text-btn">ルームを退出</button>
+          <p class="start-note" id="start-note">マウスロックを許可してください</p>
+        </div>
+      </div>
+
+      <div id="pause-menu" class="pause-menu hidden">
+        <div class="pause-card glass">
+          <span class="micro-label">SYSTEM HALT</span>
+          <h2>PAUSED<span>//</span></h2>
+          <p class="pause-desc" id="pause-desc">マウスロックが解除されました。<br />再開するには下のボタンをクリックしてください。</p>
+          <button id="btn-resume" class="btn btn-primary"><span>戦闘に戻る</span></button>
+          <button id="btn-pause-settings" class="btn btn-outline"><span>設定</span></button>
+          <button id="btn-leave" class="btn btn-danger"><span>ルームを退出</span></button>
+          <div class="pause-meta"><span id="pause-room">ROOM ----</span><span>ESC / RESUME</span></div>
+        </div>
+      </div>
+
+      <div id="death-overlay" class="death-overlay hidden">
+        <span class="micro-label">SIGNAL LOST</span>
+        <h2>TERMINATED</h2>
+        <p id="death-by">BY UNKNOWN</p>
+        <div class="respawn-count"><span>RESPAWN IN</span><b id="respawn-timer">3</b></div>
+        <div class="death-scan"></div>
+      </div>
+
+      <div id="disconnect-overlay" class="disconnect-overlay hidden">
+        <div class="disconnect-card glass">
+          <span class="micro-label">CONNECTION LOST</span>
+          <h2>信号が途絶えた</h2>
+          <p id="disconnect-reason">ホストとの接続が切れました。</p>
+          <button id="btn-disconnect-menu" class="btn btn-primary"><span>メニューへ戻る</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= MODALS ======================= -->
+    <div id="connect-overlay" class="modal-layer hidden">
+      <div class="connect-overlay-card glass">
+        <div class="loader-ring"><i></i><i></i><i></i><span></span></div>
+        <span class="micro-label" id="connect-kicker">INITIALIZING</span>
+        <h2 id="connect-title">ルームを準備中</h2>
+        <p id="connect-detail">PeerJSシグナリングサーバーに接続しています…</p>
+        <div class="connect-progress"><i></i></div>
+        <button id="btn-connect-cancel" class="text-btn">中止</button>
+      </div>
+    </div>
+
+    <dialog id="settings-dialog" class="settings-dialog">
+      <form method="dialog" id="settings-form">
+        <div class="settings-head">
+          <div><span class="micro-label">SYSTEM CONFIG</span><h2>設定</h2></div>
+          <button type="button" id="btn-settings-close" class="icon-btn" aria-label="閉じる">✕</button>
+        </div>
+        <div class="settings-body">
+          <label class="range-field">
+            <span>マウス感度 <b id="sensitivity-value">1.0</b></span>
+            <input id="sensitivity" type="range" min="0.2" max="3" step="0.05" value="1" />
+          </label>
+          <label class="range-field">
+            <span>視野角 FOV <b id="fov-value">82°</b></span>
+            <input id="fov" type="range" min="65" max="110" step="1" value="82" />
+          </label>
+          <label class="range-field">
+            <span>マスター音量 <b id="volume-value">65%</b></span>
+            <input id="volume" type="range" min="0" max="100" step="1" value="65" />
+          </label>
+          <div class="setting-row">
+            <span>描画クオリティ</span>
+            <div class="segmented" id="quality-segmented">
+              <button type="button" data-quality="high" class="active">HIGH</button>
+              <button type="button" data-quality="low">LOW</button>
+            </div>
+          </div>
+          <label class="check check-wide"><input id="show-fps" type="checkbox" /> <span>FPSカウンターを表示</span></label>
+          <label class="check check-wide"><input id="ambient-audio" type="checkbox" checked /> <span>環境音を有効にする</span></label>
+          <p class="settings-note">設定はこの端末に保存されます。マルチプレイ中はゲームが継続するため、安全な場所で設定してください。</p>
+        </div>
+        <div class="settings-foot">
+          <button type="button" id="btn-settings-reset" class="text-btn">初期化</button>
+          <button type="submit" class="btn btn-primary"><span>完了</span></button>
+        </div>
+        <div id="settings-server" class="settings-server">
+          <span class="micro-label">SIGNAL SERVER</span>
+          <p>現在: <b id="settings-server-text">PeerJS Cloud</b></p>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="help-dialog" class="help-dialog">
+      <div class="settings-head">
+        <div><span class="micro-label">FIELD MANUAL</span><h2>操作説明</h2></div>
+        <button type="button" id="btn-help-close" class="icon-btn" aria-label="閉じる">✕</button>
+      </div>
+      <div class="help-grid">
+        <section>
+          <h3>MOVEMENT</h3>
+          <dl class="keylist">
+            <div><dt>W A S D</dt><dd>移動</dd></div>
+            <div><dt>SPACE</dt><dd>ジャンプ（コヨーテタイムあり）</dd></div>
+            <div><dt>SHIFT</dt><dd>スプリント</dd></div>
+            <div><dt>CTRL</dt><dd>しゃがみ</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h3>COMBAT</h3>
+          <dl class="keylist">
+            <div><dt>LMB</dt><dd>射撃</dd></div>
+            <div><dt>RMB</dt><dd>ズーム / 精度向上</dd></div>
+            <div><dt>R</dt><dd>リロード</dd></div>
+            <div><dt>1—5 / WHEEL</dt><dd>武器切替</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h3>INTERFACE</h3>
+          <dl class="keylist">
+            <div><dt>TAB</dt><dd>スコアボード</dd></div>
+            <div><dt>M</dt><dd>ミュート</dd></div>
+            <div><dt>ESC</dt><dd>ポーズメニュー</dd></div>
+            <div><dt>F</dt><dd>フルスクリーン</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h3>TACTICS</h3>
+          <ul class="help-tips">
+            <li><b class="c-cyan">ジャンプパッド</b>で高台へ。空中でも射撃可能。</li>
+            <li><b class="c-magenta">テレポーター</b>はクールダウンあり。</li>
+            <li><b class="c-violet">PHASE GATE</b>は通過できる物体が異なる。</li>
+            <li><b class="c-amber">レーザー</b>は赤く点灯中のみダメージ。</li>
+          </ul>
+        </section>
+      </div>
+      <div class="settings-foot"><span></span><button type="button" id="btn-help-done" class="btn btn-primary"><span>閉じる</span></button></div>
+    </dialog>
+
+    <div id="toast" class="global-toast" role="alert"><span id="toast-text"></span></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
