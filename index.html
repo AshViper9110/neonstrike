@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- NEON//STRIKE standalone build. Open this file in Chrome / Edge to play. -->
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -7,28 +8,10 @@
   <meta name="description" content="NEON//STRIKE — PeerJSで遊ぶネオン調3D FPS。4文字ルームコード、5種類の武器、動くステージギミック。" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2304020c'/%3E%3Cpath d='M3 12 8 3l5 9z' fill='%2300f6ff'/%3E%3C/svg%3E" />
   <title>NEON//STRIKE — PeerJS Neon FPS</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./game.js"></script>
 </head>
 <body>
-  <!-- Shown only when this file is opened directly via file:// (CSS/JS are blocked there). -->
-  <div id="boot-notice" style="display:none;position:fixed;inset:0;z-index:99999;place-items:center;padding:24px;background:radial-gradient(circle at 50% 20%, #101a36 0%, #04020c 62%);color:#e7f7ff;font-family:'Segoe UI','Yu Gothic UI',sans-serif;text-align:center;">
-    <div style="max-width:560px;width:100%;padding:34px 30px 30px;border:1px solid rgba(0,246,255,0.38);background:linear-gradient(160deg,rgba(10,17,34,0.98),rgba(3,6,16,0.99));box-shadow:0 0 70px rgba(0,246,255,0.14),0 30px 90px rgba(0,0,0,0.7);">
-      <p style="margin:0 0 12px;font-size:10px;letter-spacing:0.24em;color:#00f6ff;">NEON//STRIKE — BOOT CHECK</p>
-      <h1 style="margin:0 0 16px;font-size:21px;line-height:1.45;letter-spacing:0.02em;">ローカルサーバーから起動してください</h1>
-      <p style="margin:0 0 18px;font-size:12px;line-height:1.9;color:#8ba3bd;">index.html を直接開くと、ブラウザのセキュリティ制限（file://）により <b style="color:#e7f7ff;">CSS と JavaScript が読み込まれません</b>。そのため画面が崩れたり、操作できなくなります。</p>
-      <div style="margin:0 0 20px;padding:14px 16px;border-left:2px solid #00f6ff;background:rgba(0,246,255,0.05);text-align:left;font-size:12px;line-height:1.9;color:#c7d9e8;">
-        1. フォルダ内の <code style="padding:2px 6px;background:rgba(255,255,255,0.08);color:#a6ff4d;">start-game.bat</code> をダブルクリック<br />
-        2. ブラウザが自動で開きます（<code style="color:#00f6ff;">http://localhost:5173</code>）
-      </div>
-      <p style="margin:0 0 6px;font-size:10px;color:#52657c;">手動で起動する場合</p>
-      <p style="margin:0;font-size:12px;line-height:1.9;color:#8ba3bd;"><code style="color:#e7f7ff;">npm.cmd install</code> → <code style="color:#e7f7ff;">npm.cmd run dev</code></p>
-    </div>
-  </div>
-  <script>
-    if (location.protocol === 'file:') {
-      document.getElementById('boot-notice').style.display = 'grid';
-    }
-  </script>
-
   <div id="app">
     <!-- ======================= MAIN MENU ======================= -->
     <section id="menu-screen" class="screen">
@@ -127,8 +110,8 @@
             <summary>詳細ネットワーク設定 <span>ADVANCED</span></summary>
             <div class="advanced-body">
               <p class="advanced-hint">
-                既定では PeerJS クラウドを使用します。ローカルの PeerServer を使う場合は
-                下記を入力してください（<code>npm run signal</code> で起動）。
+                既定では PeerJS クラウドを使用します。自前の PeerServer を使う場合のみ
+                下記を入力してください（サーバーはブラウザの外で用意が必要です）。
               </p>
               <div class="advanced-grid">
                 <label class="field field-sm"><span>HOST</span><input id="peer-host" placeholder="0.peerjs.com" spellcheck="false" /></label>
@@ -138,8 +121,7 @@
               </div>
               <div class="advanced-row">
                 <label class="check"><input id="peer-secure" type="checkbox" /> <span>SSL (wss/https)</span></label>
-                <button type="button" id="btn-local-preset" class="mini-btn">LOCAL PRESET</button>
-                <button type="button" id="btn-cloud-preset" class="mini-btn">CLOUD</button>
+                <button type="button" id="btn-cloud-preset" class="mini-btn">PEERJS CLOUD</button>
               </div>
               <div class="advanced-row advanced-save">
                 <label class="check"><input id="peer-remember" type="checkbox" /> <span>この端末に保存</span></label>
@@ -442,7 +424,5 @@
 
     <div id="toast" class="global-toast" role="alert"><span id="toast-text"></span></div>
   </div>
-
-  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
